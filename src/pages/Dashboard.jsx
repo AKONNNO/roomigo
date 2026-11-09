@@ -3,7 +3,7 @@ import { useApp } from "../context/AppContext.jsx";
 
 export default function Dashboard() {
   const { user, enquiries, hostels } = useApp();
-  const mine = enquiries.filter((e) => e.user === user.name);
+const mine = enquiries.filter((e) => (e.email ? e.email === user.email : e.user === user.name));
   return (
     <>
       <h1>My booking requests</h1>

@@ -11,13 +11,17 @@ export default function Navbar() {
         <NavLink to="/" end>Home</NavLink>
         <NavLink to="/listings">Find a hostel</NavLink>
         {user?.role === "student" && <NavLink to="/dashboard">My requests</NavLink>}
+        {user?.role === "manager" && <NavLink to="/manager">My hostel</NavLink>}
         {user?.role === "admin" && <NavLink to="/admin">Admin panel</NavLink>}
         {user ? (
           <a href="#/" onClick={(e) => { e.preventDefault(); signOut(); navigate("/"); }}>
             Sign out ({user.name})
           </a>
         ) : (
-          <NavLink to="/login">Sign in</NavLink>
+          <>
+  <NavLink to="/login">Sign in</NavLink>
+  <NavLink to="/signup">Sign up</NavLink>
+</>
         )}
       </nav>
     </header>
