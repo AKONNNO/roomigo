@@ -77,9 +77,142 @@ img { max-width: 100%; height: auto; }
   background: rgba(0, 0, 0, .7); color: #fff;
 }
 
-/* Room photos on the student's hostel page */
-.room-block { margin: .8rem 0; }
-.room-img { width: 130px; height: 95px; object-fit: cover; border-radius: 8px; }
+/* Hero image on hostel detail page */
+.hero-img {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+.hero-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+.hero-img:hover img { transform: scale(1.02); }
+.hero-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,.55));
+  padding: 2rem 1rem 1rem;
+  color: #fff;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.hero-overlay span { font-size: 0.9rem; }
+
+/* Photo thumbnails strip */
+.photo-strip {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.photo-thumb {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 90px;
+  height: 70px;
+  flex: none;
+  transition: transform 0.2s;
+}
+.photo-thumb:hover { transform: scale(1.05); }
+.photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 8px;
+}
+
+/* Room photos */
+.room-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+.room-img {
+  width: 130px;
+  height: 95px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Lightbox overlay */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.lightbox-content {
+  position: relative;
+  max-width: 900px;
+  width: 100%;
+}
+.lightbox-content img {
+  width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 12px;
+  display: block;
+}
+.lightbox-close {
+  position: fixed;
+  top: 1rem;
+  right: 1.5rem;
+  background: rgba(255,255,255,.15);
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  cursor: pointer;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  line-height: 1;
+  transition: background 0.2s;
+}
+.lightbox-close:hover { background: rgba(255,255,255,.3); }
+.lightbox-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  color: #fff;
+}
+.lightbox-nav span { font-size: 0.9rem; min-width: 60px; text-align: center; }
+.lightbox-nav button {
+  background: rgba(255,255,255,.15);
+  border: none;
+  color: #fff;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.lightbox-nav button:hover:not(:disabled) { background: rgba(255,255,255,.3); }
+.lightbox-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
 
 /* Banner preview in the admin panel */
 .banner-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: .6rem; }

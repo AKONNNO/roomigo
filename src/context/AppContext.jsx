@@ -113,15 +113,33 @@ export function AppProvider({ children }) {
   };
 
   const addHostel = async (data) => {
+    // Generate a client-side ID immediately so the UI updates instantly
+    const tempId = Date.now();
+    const newHostel = {
+      ...data,
+      id: tempId,
+      photos: data.photos || [],
+      roomPhotos: data.roomPhotos || {},
+      featured: data.featured || false,
+    };
+
+    // Optimistic update — show immediately
+    setHostels((list) => [...list, newHostel]);
+
     if (useSupabase) {
       const result = await supabaseService.addHostel(data);
-      if (result.ok && result.hostel) setHostels((list) => [...list, result.hostel]);
+      if (result.ok && result.hostel) {
+        // Replace temp entry with real one from DB
+        setHostels((list) =>
+          list.map((h) => (h.id === tempId ? { ...h, ...result.hostel, id: result.hostel.id || tempId } : h))
+        );
+      } else if (!result.ok) {
+        // Supabase failed — keep the local entry but don't remove it
+        console.warn("Supabase addHostel failed, keeping local entry.");
+      }
       return result;
     }
-    setHostels((list) => [
-      ...list,
-      { ...data, id: list.length ? Math.max(...list.map((h) => h.id)) + 1 : 1 },
-    ]);
+
     return { ok: true };
   };
 

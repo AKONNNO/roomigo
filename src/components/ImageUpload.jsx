@@ -14,8 +14,11 @@ export default function ImageUpload({ onFiles, label, multiple = true }) {
         const url = await uploadImage(f);
         if (url) urls.push(url);
       }
-      if (urls.length) onFiles(urls);
-      if (urls.length < files.length) alert("Some images failed to upload.");
+      if (urls.length) {
+        onFiles(urls);
+      } else {
+        alert("Image upload failed. Check that Supabase Storage is set up and your project is active.");
+      }
     } catch {
       alert("One of the images could not be read.");
     }

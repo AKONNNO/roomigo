@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AMENITIES } from "../data/hostels.js";
 import { useApp } from "../context/AppContext.jsx";
@@ -11,8 +11,23 @@ export default function HostelDetail() {
   const [room, setRoom] = useState("");
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
+  const [lightbox, setLightbox] = useState(null); // index of lightbox photo
+
+  // Close lightbox on Escape key
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") setLightbox(null); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   if (!h) return <p>Hostel not found. <Link to="/listings">Back to results</Link></p>;
+
+  const allPhotos = h.photos || [];
+  const heroPhoto = allPhotos[0];
+  const heroSrc = heroPhoto
+    ? (heroPhoto.startsWith("/") ? heroPhoto : `/${heroPhoto}`)
+    : null;
+  const thumbs = allPhotos.slice(1);
 
   const rooms = h.rooms || [];
   const submit = (e) => {
@@ -22,14 +37,40 @@ export default function HostelDetail() {
     setSent(true);
   };
 
+  // Get all images for lightbox including room photos
+  const lightboxPhotos = allPhotos.map((p) => ({
+    src: p.startsWith("/") ? p : `/${p}`,
+    label: h.name,
+  }));
+
   return (
     <>
       <p><Link to="/listings">← Back to results</Link></p>
-      {h.photos?.length > 0 && (
-        <div className="gal">
-          {h.photos.map((_, i) => <Photo key={i} hostel={h} index={i} />)}
+
+      {/* Hero image */}
+      {heroSrc && (
+        <div className="hero-img" onClick={() => setLightbox(0)}>
+          <img src={heroSrc} alt={h.name} />
+          <div className="hero-overlay">
+            <span>View all {allPhotos.length} photo{allPhotos.length !== 1 ? "s" : ""}</span>
+          </div>
         </div>
       )}
+
+      {/* Thumbnails */}
+      {allPhotos.length > 1 && (
+        <div className="photo-strip">
+          {allPhotos.map((p, i) => {
+            const src = p.startsWith("/") ? p : `/${p}`;
+            return (
+              <button key={i} className="photo-thumb" onClick={() => setLightbox(i)}>
+                <img src={src} alt={`Photo ${i + 1}`} />
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div className="two">
         <div>
           <h1>{h.name}</h1>
@@ -47,7 +88,7 @@ export default function HostelDetail() {
               <div key={t} className="room-block">
                 <strong>{t}</strong>
                 {pics.length ? (
-                  <div className="thumbs">
+                  <div className="room-photos">
                     {pics.map((p, i) => {
                       const fixedSrc = p?.startsWith("/") ? p : `/${p}`;
                       return <img key={i} className="room-img" src={fixedSrc} alt={`${t} room ${i + 1}`} loading="lazy" onError={(e) => (e.target.style.display = "none")} />;
@@ -80,6 +121,29 @@ export default function HostelDetail() {
           </div>
         </div>
       </div>
+
+      {/* Lightbox overlay */}
+      {lightbox !== null && (
+        <div className="lightbox" onClick={() => setLightbox(null)}>
+          <button className="lightbox-close" onClick={() => setLightbox(null)}>×</button>
+          <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <img src={lightboxPhotos[lightbox].src} alt={lightboxPhotos[lightbox].label} />
+            {allPhotos.length > 1 && (
+              <div className="lightbox-nav">
+                <button
+                  disabled={lightbox === 0}
+                  onClick={(e) => { e.stopPropagation(); setLightbox(lightbox - 1); }}
+                >‹</button>
+                <span>{lightbox + 1} / {allPhotos.length}</span>
+                <button
+                  disabled={lightbox === allPhotos.length - 1}
+                  onClick={(e) => { e.stopPropagation(); setLightbox(lightbox + 1); }}
+                >›</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
