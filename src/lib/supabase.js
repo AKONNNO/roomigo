@@ -18,13 +18,8 @@ export const supabase = createClient(
 
 // Helper to check if Supabase is configured
 export const isSupabaseConfigured = () => {
-  if (!supabaseUrl || !supabaseAnonKey) return false;
-  // Must be a valid supabase.co URL
-  return (
-    supabaseUrl.includes(".supabase.co") &&
-    !supabaseUrl.includes("placeholder") &&
-    !supabaseUrl.includes("your-project-id") &&
-    !supabaseUrl.includes("undefined") &&
-    !supabaseUrl.includes("null")
-  );
+  return supabaseUrl && 
+         supabaseAnonKey && 
+         !supabaseUrl.includes("placeholder") &&
+         !supabaseUrl.includes("your-project-id");
 };
