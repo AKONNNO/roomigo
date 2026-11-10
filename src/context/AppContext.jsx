@@ -14,7 +14,15 @@ export const managerCodeOf = (h) => h.managerCode || `MGR${h.id}`;
 
 function load() {
   try {
-    return JSON.parse(localStorage.getItem(KEY)) || {};
+    const data = JSON.parse(localStorage.getItem(KEY)) || {};
+    // Ensure hostels always have photos (merge saved data with defaults if needed)
+    if (data.hostels && data.hostels.length) {
+      data.hostels = data.hostels.map((h, i) => ({
+        ...h,
+        photos: h.photos?.length ? h.photos : (HOSTELS[i]?.photos || []),
+      }));
+    }
+    return data;
   } catch {
     return {};
   }
