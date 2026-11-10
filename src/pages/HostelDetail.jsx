@@ -48,7 +48,10 @@ export default function HostelDetail() {
                 <strong>{t}</strong>
                 {pics.length ? (
                   <div className="thumbs">
-                    {pics.map((p, i) => <img key={i} className="room-img" src={p} alt={`${t} room ${i + 1}`} loading="lazy" />)}
+                    {pics.map((p, i) => {
+                      const fixedSrc = p?.startsWith("/") ? p : `/${p}`;
+                      return <img key={i} className="room-img" src={fixedSrc} alt={`${t} room ${i + 1}`} loading="lazy" onError={(e) => (e.target.style.display = "none")} />;
+                    })}
                   </div>
                 ) : (
                   <p className="muted">Room photos coming soon.</p>

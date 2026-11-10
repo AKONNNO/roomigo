@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useApp, managerCodeOf } from "../context/AppContext.jsx";
 import { AMENITIES } from "../data/hostels.js";
-import { fileToDataUrl } from "../utils/image.js";
+import { uploadImage } from "../lib/supabase-service.js";
 
 const ROOM_TYPES = ["1-in-a-room", "2-in-a-room", "3-in-a-room", "4-in-a-room"];
 const BLANK = {
@@ -17,7 +17,13 @@ function Upload({ onFiles, label, multiple = true }) {
     if (!files.length) return;
     setBusy(true);
     try {
-      onFiles(await Promise.all(files.map((f) => fileToDataUrl(f))));
+      const urls = [];
+      for (const f of files) {
+        const url = await uploadImage(f);
+        if (url) urls.push(url);
+      }
+      if (urls.length) onFiles(urls);
+      if (urls.length < files.length) alert("Some images failed to upload.");
     } catch {
       alert("One of the images could not be read.");
     }
@@ -25,7 +31,7 @@ function Upload({ onFiles, label, multiple = true }) {
   };
   return (
     <label className="btn alt upload">
-      {busy ? "Processing..." : label}
+      {busy ? "Uploading..." : label}
       <input type="file" accept="image/*" multiple={multiple} onChange={pick} hidden />
     </label>
   );
@@ -87,6 +93,7 @@ export default function Admin() {
   const [tab, setTab] = useState("hostels");
   const [editing, setEditing] = useState(null); // hostel id, or "new"
   const [filter, setFilter] = useState("All");
+  const [genCode, setGenCode] = useState({});
 
   const pending = enquiries.filter((e) => e.status === "Pending").length;
   const approved = enquiries.filter((e) => e.status === "Approved").length;
@@ -111,7 +118,7 @@ export default function Admin() {
       </div>
 
       <div className="tabs">
-        {[["hostels", "Hostels and photos"], ["home", "Home page"], ["enquiries", "Enquiries"]].map(([k, t]) => (
+        {[["hostels", "Hostels and photos"], ["home", "Home page"], ["enquiries", `Enquiries${pending ? ` (${pending})` : ""}`], ["managers", "Manager codes"]].map(([k, t]) => (
           <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{t}</button>
         ))}
       </div>
@@ -231,6 +238,78 @@ export default function Admin() {
             <p className="muted">No enquiries to show.</p>
           )}
         </>
+      )}
+
+      {tab === "managers" && (
+        <div>
+          <p className="muted" style={{ marginBottom: "1rem" }}>
+            Assign a manager access code to each hostel. Give this code to the hostel manager so they can sign in.
+            Default code is <code>MGR1</code>, <code>MGR2</code>, etc.
+          </p>
+          <div className="scroll">
+            <table>
+              <thead><tr><th>Hostel</th><th>Area</th><th>Current Code</th><th>Set New Code</th></tr></thead>
+              <tbody>
+                {hostels.map((h) => (
+                  <tr key={h.id}>
+                    <td><strong>{h.name}</strong></td>
+                    <td className="muted">{h.area}</td>
+                    <td>
+                      {h.managerCode ? (
+                        <span className="st Approved">{h.managerCode}</span>
+                      ) : (
+                        <span className="muted">{managerCodeOf(h)} (default)</span>
+                      )}
+                    </td>
+                    <td>
+                      <div className="row">
+                        <input
+                          type="text"
+                          placeholder="Enter code"
+                          value={genCode[h.id] || ""}
+                          onChange={(e) => setGenCode((g) => ({ ...g, [h.id]: e.target.value }))}
+                          style={{ width: "130px" }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const code = (genCode[h.id] || "").trim();
+                              if (!code) return;
+                              if (code.length < 4) return alert("Code must be at least 4 characters.");
+                              app.updateHostel(h.id, { managerCode: code });
+                              setGenCode((g) => ({ ...g, [h.id]: "" }));
+                            }
+                          }}
+                        />
+                        <button
+                          className="btn"
+                          onClick={() => {
+                            const code = (genCode[h.id] || "").trim();
+                            if (!code) return alert("Enter a code first.");
+                            if (code.length < 4) return alert("Code must be at least 4 characters.");
+                            app.updateHostel(h.id, { managerCode: code });
+                            setGenCode((g) => ({ ...g, [h.id]: "" }));
+                          }}
+                        >
+                          Save
+                        </button>
+                        {h.managerCode && (
+                          <button
+                            className="btn alt"
+                            onClick={() => {
+                              if (!window.confirm(`Reset code for ${h.name} to default?`)) return;
+                              app.updateHostel(h.id, { managerCode: null });
+                            }}
+                          >
+                            Reset
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
     </>
   );

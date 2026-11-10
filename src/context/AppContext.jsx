@@ -1,11 +1,15 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { HOSTELS } from "../data/hostels.js";
+import * as supabaseService from "../lib/supabase-service.js";
 
 const AppContext = createContext(null);
 const KEY = "roomigo-v2";
+const useSupabase = supabaseService.isSupabaseConfigured();
 
 // Demo values only. Real security needs a backend (Firebase) because anyone can read this file in the browser.
 export const ADMIN_PASSCODE = "roomigo-admin";
+
+// Get manager code — uses saved code from hostel data, or generates default MGR{id}
 export const managerCodeOf = (h) => h.managerCode || `MGR${h.id}`;
 
 function load() {
@@ -29,19 +33,42 @@ export function AppProvider({ children }) {
   const [users, setUsers] = useState(saved.users || []);
   const [enquiries, setEnquiries] = useState(saved.enquiries || []);
   const [hostels, setHostels] = useState(saved.hostels || HOSTELS);
-  const [banner, setBanner] = useState(saved.banner || null);
+  const [banner, setBannerState] = useState(saved.banner || null);
   const [saveError, setSaveError] = useState(false);
+  const [loading, setLoading] = useState(useSupabase);
 
+  // Load initial data from Supabase
   useEffect(() => {
-    try {
-      localStorage.setItem(KEY, JSON.stringify({ user, users, enquiries, hostels, banner }));
-      setSaveError(false);
-    } catch {
-      setSaveError(true);
+    if (useSupabase) {
+      Promise.all([
+        supabaseService.fetchHostels(),
+        supabaseService.fetchBanner(),
+      ]).then(([hostelsData, bannerData]) => {
+        if (hostelsData.length) setHostels(hostelsData);
+        if (bannerData) setBannerState(bannerData);
+        setLoading(false);
+      }).catch(() => setLoading(false));
+    }
+  }, []);
+
+  // Save to localStorage as fallback
+  useEffect(() => {
+    if (!useSupabase) {
+      try {
+        localStorage.setItem(KEY, JSON.stringify({ user, users, enquiries, hostels, banner }));
+        setSaveError(false);
+      } catch {
+        setSaveError(true);
+      }
     }
   }, [user, users, enquiries, hostels, banner]);
 
   const signUp = async (name, email, password) => {
+    if (useSupabase) {
+      const result = await supabaseService.signUpStudent(name, email, password);
+      if (result.ok) setUser({ name, email, role: "student" });
+      return result;
+    }
     const mail = email.trim().toLowerCase();
     if (!name.trim()) return { ok: false, error: "Please enter your name." };
     if (!/^\S+@\S+\.\S+$/.test(mail)) return { ok: false, error: "Please enter a valid email address." };
@@ -54,6 +81,11 @@ export function AppProvider({ children }) {
   };
 
   const signInStudent = async (email, password) => {
+    if (useSupabase) {
+      const result = await supabaseService.signInStudent(email, password);
+      if (result.ok) setUser(result.user);
+      return result;
+    }
     const mail = email.trim().toLowerCase();
     const found = users.find((u) => u.email === mail);
     const passwordHash = await hashPassword(mail, password);
@@ -62,56 +94,93 @@ export function AppProvider({ children }) {
     return { ok: true };
   };
 
-  const addEnquiry = (hostelId, room, message) =>
+  const addEnquiry = async (hostelId, room, message) => {
+    if (useSupabase && user) await supabaseService.createEnquiry(hostelId, room, message, user);
     setEnquiries((list) => [
       ...list,
       { id: Date.now(), hostelId, user: user.name, email: user.email, room, message, status: "Pending" },
     ]);
-  const setStatus = (id, status) =>
+  };
+
+  const setStatus = async (id, status) => {
+    if (useSupabase) await supabaseService.updateEnquiryStatus(id, status);
     setEnquiries((list) => list.map((e) => (e.id === id ? { ...e, status } : e)));
+  };
 
-  const updateHostel = (id, patch) =>
+  const updateHostel = async (id, patch) => {
+    if (useSupabase) await supabaseService.updateHostel(id, patch);
     setHostels((list) => list.map((h) => (h.id === id ? { ...h, ...patch } : h)));
-  const addHostel = (data) =>
-    setHostels((list) => [...list, { ...data, id: Math.max(0, ...list.map((h) => h.id)) + 1 }]);
-  const deleteHostel = (id) => setHostels((list) => list.filter((h) => h.id !== id));
-  const addPhotos = (id, urls) =>
-    setHostels((list) => list.map((h) => (h.id === id ? { ...h, photos: [...(h.photos || []), ...urls] } : h)));
-  const removePhoto = (id, index) =>
-    setHostels((list) =>
-      list.map((h) => (h.id === id ? { ...h, photos: h.photos.filter((_, i) => i !== index) } : h))
-    );
+  };
 
-  const addRoomPhotos = (id, type, urls) =>
-    setHostels((list) =>
-      list.map((h) =>
-        h.id === id
-          ? { ...h, roomPhotos: { ...(h.roomPhotos || {}), [type]: [...(h.roomPhotos?.[type] || []), ...urls] } }
-          : h
-      )
+  const addHostel = async (data) => {
+    if (useSupabase) {
+      const result = await supabaseService.addHostel(data);
+      if (result.ok && result.hostel) setHostels((list) => [...list, result.hostel]);
+      return result;
+    }
+    setHostels((list) => [
+      ...list,
+      { ...data, id: list.length ? Math.max(...list.map((h) => h.id)) + 1 : 1 },
+    ]);
+    return { ok: true };
+  };
+
+  const deleteHostel = async (id) => {
+    if (useSupabase) await supabaseService.deleteHostel(id);
+    setHostels((list) => list.filter((h) => h.id !== id));
+  };
+
+  const addPhotos = async (id, urls) => {
+    const updated = hostels.map((h) => h.id === id ? { ...h, photos: [...(h.photos || []), ...urls] } : h);
+    setHostels(updated);
+    if (useSupabase) await supabaseService.updateHostel(id, { photos: updated.find(h => h.id === id)?.photos });
+  };
+
+  const removePhoto = async (id, index) => {
+    const updated = hostels.map((h) => h.id === id ? { ...h, photos: h.photos.filter((_, i) => i !== index) } : h);
+    setHostels(updated);
+    if (useSupabase) await supabaseService.updateHostel(id, { photos: updated.find(h => h.id === id)?.photos });
+  };
+
+  const addRoomPhotos = async (id, type, urls) => {
+    const updated = hostels.map((h) =>
+      h.id === id ? { ...h, roomPhotos: { ...(h.roomPhotos || {}), [type]: [...(h.roomPhotos?.[type] || []), ...urls] } } : h
     );
-  const removeRoomPhoto = (id, type, index) =>
-    setHostels((list) =>
-      list.map((h) =>
-        h.id === id
-          ? { ...h, roomPhotos: { ...(h.roomPhotos || {}), [type]: (h.roomPhotos?.[type] || []).filter((_, i) => i !== index) } }
-          : h
-      )
+    setHostels(updated);
+    if (useSupabase) await supabaseService.updateHostel(id, { room_photos: updated.find(h => h.id === id)?.roomPhotos });
+  };
+
+  const removeRoomPhoto = async (id, type, index) => {
+    const updated = hostels.map((h) =>
+      h.id === id ? { ...h, roomPhotos: { ...(h.roomPhotos || {}), [type]: (h.roomPhotos?.[type] || []).filter((_, i) => i !== index) } } : h
     );
+    setHostels(updated);
+    if (useSupabase) await supabaseService.updateHostel(id, { room_photos: updated.find(h => h.id === id)?.roomPhotos });
+  };
+
+  const setBanner = async (url) => {
+    setBannerState(url);
+    if (useSupabase) url ? await supabaseService.setBanner(url) : await supabaseService.removeBanner();
+  };
 
   const resetData = () => {
     setHostels(HOSTELS);
-    setBanner(null);
+    setBannerState(null);
+  };
+
+  const signIn = (u) => setUser(u);
+  const signOut = async () => {
+    if (useSupabase) await supabaseService.signOut();
+    setUser(null);
   };
 
   const value = {
-    user, users, hostels, enquiries, banner, saveError,
-    signUp, signInStudent,
-    signIn: (u) => setUser(u), // used for manager and admin sign-in
-    signOut: () => setUser(null),
+    user, users, hostels, enquiries, banner, saveError, loading,
+    signUp, signInStudent, signIn, signOut,
     addEnquiry, setStatus, updateHostel, addHostel, deleteHostel,
     addPhotos, removePhoto, addRoomPhotos, removeRoomPhoto, setBanner, resetData,
   };
+
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 

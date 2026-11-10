@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { fileToDataUrl } from "../utils/image.js";
+import { uploadImage } from "../lib/supabase-service.js";
 
 export default function ImageUpload({ onFiles, label, multiple = true }) {
   const [busy, setBusy] = useState(false);
@@ -9,7 +9,13 @@ export default function ImageUpload({ onFiles, label, multiple = true }) {
     if (!files.length) return;
     setBusy(true);
     try {
-      onFiles(await Promise.all(files.map((f) => fileToDataUrl(f))));
+      const urls = [];
+      for (const f of files) {
+        const url = await uploadImage(f);
+        if (url) urls.push(url);
+      }
+      if (urls.length) onFiles(urls);
+      if (urls.length < files.length) alert("Some images failed to upload.");
     } catch {
       alert("One of the images could not be read.");
     }
@@ -17,7 +23,7 @@ export default function ImageUpload({ onFiles, label, multiple = true }) {
   };
   return (
     <label className="btn alt upload">
-      {busy ? "Processing..." : label}
+      {busy ? "Uploading..." : label}
       <input type="file" accept="image/*" multiple={multiple} onChange={pick} hidden />
     </label>
   );

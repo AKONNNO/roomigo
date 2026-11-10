@@ -57,7 +57,7 @@ export default function Manager() {
                   <div className="thumbs">
                     {pics.length ? pics.map((p, i) => (
                       <div className="thumb" key={i}>
-                        <img src={p} alt={`${t} ${i + 1}`} />
+                        <img src={p?.startsWith("/") ? p : `/${p}`} alt={`${t} ${i + 1}`} />
                         <button type="button" aria-label="Remove photo" onClick={() => app.removeRoomPhoto(h.id, t, i)}>×</button>
                       </div>
                     )) : <span className="badge-warn">Needs at least one photo</span>}
@@ -75,7 +75,7 @@ export default function Manager() {
       <div className="thumbs">
         {h.photos?.length ? h.photos.map((p, i) => (
           <div className="thumb" key={i}>
-            <img src={p} alt={`${h.name} ${i + 1}`} />
+            <img src={p?.startsWith("/") ? p : `/${p}`} alt={`${h.name} ${i + 1}`} />
             <button type="button" aria-label="Remove photo" onClick={() => app.removePhoto(h.id, i)}>×</button>
           </div>
         )) : <span className="muted">No photos yet.</span>}
