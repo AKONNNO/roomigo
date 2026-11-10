@@ -57,20 +57,6 @@ export default function HostelDetail() {
         </div>
       )}
 
-      {/* Thumbnails */}
-      {allPhotos.length > 1 && (
-        <div className="photo-strip">
-          {allPhotos.map((p, i) => {
-            const src = p.startsWith("/") ? p : `/${p}`;
-            return (
-              <button key={i} className="photo-thumb" onClick={() => setLightbox(i)}>
-                <img src={src} alt={`Photo ${i + 1}`} />
-              </button>
-            );
-          })}
-        </div>
-      )}
-
       <div className="two">
         <div>
           <h1>{h.name}</h1>

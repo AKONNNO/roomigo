@@ -53,21 +53,21 @@ export async function fetchHostels() {
     .from("hostels").select("*").order("id");
   if (error) return [];
 
-  // Fallback photo paths for each hostel
+  // Fallback photo paths for each hostel (3 per hostel)
   const fallbackPhotos = [
-    "images/akwaaba-court-1.jpg",
-    "images/oak-ridge-lodge-1.jpg",
-    "images/unity-heights-1.jpg",
-    "images/sunrise-suites-1.jpg",
-    "images/green-valley-hostel-1.jpg",
-    "images/cedar-point-1.jpg",
+    ["images/akwaaba-court-1.jpg", "images/yello.jpg", "images/cedar-point-1.jpg"],
+    ["images/oak-ridge-lodge-1.jpg", "images/akwaaba-court-1.jpg", "images/sunrise-suites-1.jpg"],
+    ["images/unity-heights-1.jpg", "images/yello.jpg", "images/green-valley-hostel-1.jpg"],
+    ["images/sunrise-suites-1.jpg", "images/cedar-point-1.jpg", "images/oak-ridge-lodge-1.jpg"],
+    ["images/green-valley-hostel-1.jpg", "images/unity-heights-1.jpg", "images/yello.jpg"],
+    ["images/cedar-point-1.jpg", "images/green-valley-hostel-1.jpg", "images/sunrise-suites-1.jpg"],
   ];
 
   return data.map((h, i) => ({
     id: h.id, name: h.name, area: h.area, price: h.price,
     dist: parseFloat(h.dist), rooms: h.rooms || [], amenities: h.amenities || [],
     available: h.available, description: h.description || "",
-    photos: h.photos?.length ? h.photos : [fallbackPhotos[i] || fallbackPhotos[0]],
+    photos: h.photos?.length ? h.photos : (fallbackPhotos[i] || fallbackPhotos[0]),
     roomPhotos: h.room_photos || {},
     featured: h.featured || false,
     managerCode: h.manager_code || null,

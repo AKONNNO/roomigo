@@ -104,13 +104,13 @@ CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
 -- Seed sample hostels (optional)
-INSERT INTO hostels (name, area, price, dist, rooms, amenities, available, description)
+INSERT INTO hostels (name, area, price, dist, rooms, amenities, available, description, photos)
 SELECT * FROM (VALUES
-  ('Akwaaba Court', 'Ayeduase', 6500, 1.2, ARRAY['1-in-a-room', '2-in-a-room'], ARRAY['Wi-Fi', 'Water', 'Security', 'Generator'], 12, 'Quiet, modern hostel near main gate.'),
-  ('Oak Ridge Lodge', 'Kentinkrono', 4800, 2.5, ARRAY['2-in-a-room', '4-in-a-room'], ARRAY['Water', 'Kitchen', 'Study room'], 5, 'Budget friendly with shared kitchen.'),
-  ('Unity Heights', 'Bomso', 5600, 1.8, ARRAY['1-in-a-room', '2-in-a-room', '4-in-a-room'], ARRAY['Wi-Fi', 'Water', 'Kitchen', 'Security'], 0, 'Popular with continuing students.'),
-  ('Sunrise Suites', 'Ayeduase', 8200, 0.8, ARRAY['1-in-a-room'], ARRAY['Wi-Fi', 'Water', 'Security', 'Generator', 'Study room'], 3, 'Premium single rooms closest to campus.'),
-  ('Green Valley Hostel', 'Boadi', 4200, 3.4, ARRAY['2-in-a-room', '4-in-a-room'], ARRAY['Water', 'Security'], 20, 'Affordable with nearby transport.'),
-  ('Cedar Point', 'Bomso', 7000, 1.5, ARRAY['1-in-a-room', '2-in-a-room'], ARRAY['Wi-Fi', 'Water', 'Kitchen', 'Generator'], 7, 'Self-contained with reliable power.')
-) AS v(name, area, price, dist, rooms, amenities, available, description)
+  ('Akwaaba Court', 'Ayeduase', 6500, 1.2, ARRAY['1-in-a-room', '2-in-a-room'], ARRAY['Wi-Fi', 'Water', 'Security', 'Generator'], 12, 'Quiet, modern hostel a short walk from the main gate.', ARRAY['images/akwaaba-court-1.jpg', 'images/yello.jpg', 'images/cedar-point-1.jpg']),
+  ('Oak Ridge Lodge', 'Kentinkrono', 4800, 2.5, ARRAY['2-in-a-room', '4-in-a-room'], ARRAY['Water', 'Kitchen', 'Study room'], 5, 'Budget friendly with a shared kitchen and study room.', ARRAY['images/oak-ridge-lodge-1.jpg', 'images/akwaaba-court-1.jpg', 'images/sunrise-suites-1.jpg']),
+  ('Unity Heights', 'Bomso', 5600, 1.8, ARRAY['1-in-a-room', '2-in-a-room', '4-in-a-room'], ARRAY['Wi-Fi', 'Water', 'Kitchen', 'Security'], 0, 'Popular with continuing students. Currently full.', ARRAY['images/unity-heights-1.jpg', 'images/yello.jpg', 'images/green-valley-hostel-1.jpg']),
+  ('Sunrise Suites', 'Ayeduase', 8200, 0.8, ARRAY['1-in-a-room'], ARRAY['Wi-Fi', 'Water', 'Security', 'Generator', 'Study room'], 3, 'Premium single rooms closest to campus.', ARRAY['images/sunrise-suites-1.jpg', 'images/cedar-point-1.jpg', 'images/oak-ridge-lodge-1.jpg']),
+  ('Green Valley Hostel', 'Boadi', 4200, 3.4, ARRAY['2-in-a-room', '4-in-a-room'], ARRAY['Water', 'Security'], 20, 'Affordable option with transport nearby.', ARRAY['images/green-valley-hostel-1.jpg', 'images/unity-heights-1.jpg', 'images/yello.jpg']),
+  ('Cedar Point', 'Bomso', 7000, 1.5, ARRAY['1-in-a-room', '2-in-a-room'], ARRAY['Wi-Fi', 'Water', 'Kitchen', 'Generator'], 7, 'Self-contained rooms with reliable power.', ARRAY['images/cedar-point-1.jpg', 'images/green-valley-hostel-1.jpg', 'images/sunrise-suites-1.jpg'])
+) AS v(name, area, price, dist, rooms, amenities, available, description, photos)
 WHERE NOT EXISTS (SELECT 1 FROM hostels LIMIT 1);
